@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+        }
+        .loading-animation {
+            display: none;
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+        }
+        .loading-animation div {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #646cff;
+            animation: loading 1.2s linear infinite;
+        }
+        @keyframes loading {
+            0%, 20%, 80%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.5);
+            }
+        }
+        .textarea-container {
+            position: relative;
+            width: 100%;
+        }
+        .mic-button {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .mic-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .mic-button.listening {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 99, 132, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 99, 132, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 99, 132, 0);
+            }
+        }
+        .textarea-prompt {
+            resize: none;
+            line-height: 1.5;
+            max-height: calc(1.5em * 5);
+            min-height: calc(1.5em * 2);
+        }
+        .enhance-toggle {
+            position: absolute;
+            right: 60px;
+            bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .enhance-toggle:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .enhance-toggle .tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            width: 200px;
+            margin-bottom: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .enhance-toggle:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .enhance-toggle .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            right: 20px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+        }
+        .image-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .btn-action {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+        .copy-feedback {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg text-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+                AI Image Generator
+                <sub class="text-sm text-gray-400">Created with Cursor by Kshitij</sub>
+            </h1>
+            
+            <div class="card bg-base-200 shadow-xl p-6">
+                <form id="generateForm" class="space-y-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text text-lg">Speak or type your prompt</span>
+                        </label>
+                        <div class="textarea-container">
+                            <textarea 
+                                class="textarea textarea-bordered w-full bg-base-300 text-gray-100 pr-32 textarea-prompt" 
+                                placeholder="Click the microphone or start typing..."
+                                name="prompt"
+                                required
+                            ></textarea>
+                            <div class="enhance-toggle">
+                                <div class="tooltip">
+                                    When enabled, your prompt will be enhanced by AI to add artistic style, 
+                                    lighting, and composition details before generating the image
+                                </div>
+                                <i class="fas fa-wand-magic-sparkles text-sm text-gray-400"></i>
+                                <input type="checkbox" id="enhanceToggle" class="toggle toggle-primary toggle-sm" checked />
+                            </div>
+                            <button 
+                                type="button"
+                                class="mic-button"
+                                id="micButton"
+                                title="Click to speak"
+                            >
+                                <i class="fas fa-microphone text-xl text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="loading-animation mt-6" id="loading">
+                    <div></div>
+                </div>
+
+                <div class="mt-6" id="result">
+                    <div id="promptInfo" class="space-y-2 mb-4 hidden">
+                        <div class="text-sm text-gray-400">Original Prompt:</div>
+                        <div id="originalPrompt" class="text-sm bg-base-300 p-2 rounded"></div>
+                        <div class="text-sm text-gray-400 mt-2">Enhanced Prompt:</div>
+                        <div id="enhancedPrompt" class="text-sm bg-base-300 p-2 rounded"></div>
+                    </div>
+                    <div id="generationTime" class="text-sm text-gray-400 mb-2 hidden"></div>
+                    <div id="imageActions" class="image-actions hidden">
+                        <button class="btn btn-sm btn-action" id="downloadBtn">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </button>
+                        <button class="btn btn-sm btn-action" id="copyBtn">
+                            <i class="fas fa-copy"></i>
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                    <div id="imageContainer" class="rounded-lg overflow-hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="copyFeedback" class="copy-feedback">
+        Image copied to clipboard!
+    </div>
+
+    <script>
+        const form = document.getElementById('generateForm');
+        const textarea = form.querySelector('textarea');
+        const micButton = document.getElementById('micButton');
+        const loading = document.getElementById('loading');
+        const imageContainer = document.getElementById('imageContainer');
+        const generationTime = document.getElementById('generationTime');
+        const enhanceToggle = document.getElementById('enhanceToggle');
+        const imageActions = document.getElementById('imageActions');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyFeedback = document.getElementById('copyFeedback');
+
+        let recognition = null;
+        try {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+        } catch (e) {
+            console.error('Speech recognition not supported:', e);
+            micButton.style.display = 'none';
+        }
+
+        if (recognition) {
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                textarea.value = transcript;
+                micButton.classList.remove('listening');
+                micButton.querySelector('i').className = 'fas fa-microphone text-xl text-gray-400';
+                generateImage();
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                micButton.classList.remove('listening');
+                micButton.querySelector('i').className = 'fas fa-microphone text-xl text-gray-400';
+            };
+
+            recognition.onend = () => {
+                micButton.classList.remove('listening');
+                micButton.querySelector('i').className = 'fas fa-microphone text-xl text-gray-400';
+            };
+
+            micButton.addEventListener('click', () => {
+                if (micButton.classList.contains('listening')) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                    micButton.classList.add('listening');
+                    micButton.querySelector('i').className = 'fas fa-microphone text-xl text-red-400';
+                }
+            });
+        }
+
+        // Function to show copy feedback
+        function showCopyFeedback() {
+            copyFeedback.style.opacity = '1';
+            setTimeout(() => {
+                copyFeedback.style.opacity = '0';
+            }, 2000);
+        }
+
+        // Function to download image
+        async function downloadImage(imageUrl) {
+            try {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `generated-image-${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error downloading image:', error);
+            }
+        }
+
+        // Function to copy image to clipboard
+        async function copyImageToClipboard(imageUrl) {
+            try {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'image/png': blob
+                    })
+                ]);
+                showCopyFeedback();
+            } catch (error) {
+                console.error('Error copying image:', error);
+                copyFeedback.textContent = 'Failed to copy image';
+                showCopyFeedback();
+            }
+        }
+
+        async function generateImage() {
+            if (!textarea.value.trim()) return;
+
+            const originalPrompt = textarea.value.trim();
+            loading.style.display = 'block';
+            imageContainer.innerHTML = '';
+            document.getElementById('promptInfo').classList.add('hidden');
+            imageActions.classList.add('hidden');
+            generationTime.classList.add('hidden');
+            
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Enhance-Prompt': enhanceToggle.checked ? 'true' : 'false'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Display prompts only if enhancement was used
+                    if (data.enhanced_prompt) {
+                        document.getElementById('originalPrompt').textContent = originalPrompt;
+                        document.getElementById('enhancedPrompt').textContent = data.enhanced_prompt;
+                        document.getElementById('promptInfo').classList.remove('hidden');
+                    } else {
+                        document.getElementById('promptInfo').classList.add('hidden');
+                    }
+
+                    const img = document.createElement('img');
+                    img.src = `data:image/png;base64,${data.image}`;
+                    img.className = 'w-full h-auto rounded-lg shadow-lg';
+                    
+                    imageContainer.innerHTML = '';
+                    imageContainer.appendChild(img);
+                    
+                    generationTime.textContent = `Generated in ${data.generation_time} seconds`;
+                    generationTime.classList.remove('hidden');
+                    imageActions.classList.remove('hidden');
+
+                    // Set up download and copy buttons
+                    downloadBtn.onclick = () => downloadImage(img.src);
+                    copyBtn.onclick = () => copyImageToClipboard(img.src);
+                    
+                    // Animate the prompts, actions, and image appearance
+                    anime({
+                        targets: ['#promptInfo', '#imageActions', img],
+                        opacity: [0, 1],
+                        translateY: [20, 0],
+                        duration: 1000,
+                        easing: 'easeOutCubic',
+                        delay: anime.stagger(200)
+                    });
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                imageContainer.innerHTML = `
+                    <div class="alert alert-error">
+                        Error: ${error.message}
+                    </div>
+                `;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Add input event listener for text input
+        let inputTimeout;
+        textarea.addEventListener('input', () => {
+            clearTimeout(inputTimeout);
+            inputTimeout = setTimeout(generateImage, 1000); // Generate after 1 second of no typing
+        });
+    </script>
+</body>
+</html> 

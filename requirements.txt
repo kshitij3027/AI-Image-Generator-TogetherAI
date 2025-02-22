@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-multipart
+together
+jinja2
+python-dotenv
+termcolor
+openai 
