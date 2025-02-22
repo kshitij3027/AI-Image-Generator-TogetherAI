@@ -27,20 +27,24 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Initialize templates
 templates = Jinja2Templates(directory="templates")
 
-# Initialize Together client
+# Initialize Together client with explicit environment variable
 try:
-    client = Together()
+    client = Together(api_key=os.environ["TOGETHER_API_KEY"])
     print(colored("✓ Together client initialized successfully", "green"))
+except KeyError:
+    print(colored("✗ TOGETHER_API_KEY environment variable not found", "red"))
 except Exception as e:
     print(colored(f"✗ Error initializing Together client: {str(e)}", "red"))
 
-# Initialize Groq client
+# Initialize Groq client with explicit environment variable
 try:
     groq_client = openai.OpenAI(
         base_url="https://api.groq.com/openai/v1",
-        api_key=os.getenv("GROQ_API_KEY")
+        api_key=os.environ["GROQ_API_KEY"]
     )
     print(colored("✓ Groq client initialized successfully", "green"))
+except KeyError:
+    print(colored("✗ GROQ_API_KEY environment variable not found", "red"))
 except Exception as e:
     print(colored(f"✗ Error initializing Groq client: {str(e)}", "red"))
 
