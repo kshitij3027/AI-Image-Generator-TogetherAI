@@ -2,6 +2,8 @@
 
 ![AI Image Generator](https://via.placeholder.com/800x200.png?text=AI+Image+Generator)
 
+Check out the App at: https://ai-image-generator-togetherai-production.up.railway.app/
+
 ## ✨ Description
 The **AI Image Generator** is a web application that allows users to generate stunning images based on text prompts using advanced AI models. The application enhances user prompts to create high-quality, artistic images. 
 
